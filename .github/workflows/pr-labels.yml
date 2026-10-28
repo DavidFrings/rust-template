@@ -1,0 +1,47 @@
+name: PR labels
+
+# Überträgt die angehakten Kästchen unter "Type of change" aus der PR-Beschreibung
+# als Labels auf den Pull Request. Entfernt man den Haken, verschwindet das Label.
+# Die Zuordnung steht in MAP unten. Die Labels legt scripts/github-setup.sh an.
+
+on:
+  pull_request:
+    types: [opened, edited, reopened]
+
+permissions:
+  contents: read
+  pull-requests: write
+
+jobs:
+  labels:
+    # Dependabot bekommt seine Labels über dependabot.yml, und PRs aus Forks
+    # haben keinen Schreibzugriff auf das Repo.
+    if: ${{ github.actor != 'dependabot[bot]' && github.event.pull_request.head.repo.full_name == github.repository }}
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    steps:
+      - name: Sync labels with ticked boxes
+        env:
+          GH_TOKEN: ${{ github.token }}
+          REPO: ${{ github.repository }}
+          PR: ${{ github.event.pull_request.number }}
+          BODY: ${{ github.event.pull_request.body }}
+        run: |
+          declare -A MAP=(
+            ["Bug fix"]="bug"
+            ["New feature"]="enhancement"
+            ["Breaking change"]="breaking-change"
+            ["Documentation"]="documentation"
+            ["Refactoring / chore"]="chore"
+            ["CI / build / dependencies"]="ci"
+          )
+          for text in "${!MAP[@]}"; do
+            label="${MAP[$text]}"
+            if grep -qiE "^[[:space:]]*[-*] \[x\] ${text}" <<<"${BODY:-}"; then
+              echo "add: $label"
+              gh api -X POST "repos/$REPO/issues/$PR/labels" -f "labels[]=$label" >/dev/null
+            else
+              # 404 heißt: Label war gar nicht gesetzt, das ist in Ordnung
+              gh api -X DELETE "repos/$REPO/issues/$PR/labels/$label" >/dev/null 2>&1 || true
+            fi
+          done

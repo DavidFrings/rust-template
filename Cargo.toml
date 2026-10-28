@@ -1,0 +1,36 @@
+[package]
+name = "__PROJECT_NAME__"
+version = "0.1.0"
+edition = "2024"
+# Muss zu "msrv" in .github/workflows/ci.yml passen
+rust-version = "1.85"
+description = "__DESCRIPTION__"
+license = "MIT"
+repository = "https://github.com/__GITHUB_OWNER__/__PROJECT_NAME__"
+readme = "README.md"
+# Verhindert versehentliches `cargo publish`. Für veröffentlichte Crates entfernen.
+publish = false
+
+[dependencies]
+
+# Dieselben Lints gelten im Editor (RustRover) und in der CI.
+# Lokal sind es Warnungen, in der CI machen sie dank `-D warnings` den Build rot.
+[lints.rust]
+# `deny` statt `forbid`, damit ein begründetes #[allow(unsafe_code)] möglich bleibt
+unsafe_code = "deny"
+missing_debug_implementations = "warn"
+# Für Libraries aktivieren:
+# missing_docs = "warn"
+
+[lints.clippy]
+all = { level = "warn", priority = -1 }
+pedantic = { level = "warn", priority = -1 }
+module_name_repetitions = "allow"
+# Aus dem Google Rust Style Guide
+undocumented_unsafe_blocks = "warn"
+# Vergessene Debug-Reste sollen nicht in main landen
+dbg_macro = "warn"
+todo = "warn"
+# Strenger, nicht für jedes Projekt sinnvoll:
+# unwrap_used = "warn"
+# exhaustive_enums = "warn"   # nur für Libraries

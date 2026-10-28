@@ -1,0 +1,23 @@
+name: CI
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+  workflow_dispatch:
+
+concurrency:
+  group: ci-${{ github.ref }}
+  cancel-in-progress: ${{ github.event_name == 'pull_request' }}
+
+permissions:
+  contents: read
+
+jobs:
+  # Die Job-ID "rust" bestimmt den Namen des Pflicht-Checks im Ruleset: "rust / result"
+  rust:
+    # Im Template-Repo selbst (Platzhalter in der Cargo.toml) nicht ausführen
+    if: ${{ !github.event.repository.is_template }}
+    uses: DavidFrings/rust-ci/.github/workflows/rust.yml@v1
+    with:
+      msrv: "1.85" # muss zu rust-version in der Cargo.toml passen
